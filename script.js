@@ -18,9 +18,41 @@ const cartCount = document.querySelector("#cart-count");
 const cartButton = document.querySelector("#cart-button");
 const toast = document.querySelector("#toast");
 
+const CART_STORAGE_KEY = "aadishop-cart";
 let selectedCategory = "All";
-let cartItems = 0;
+let cartItems = loadCart();
 let toastTimer;
+
+function loadCart() {
+  try {
+    const savedCart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || "{}");
+    if (!savedCart || typeof savedCart !== "object" || Array.isArray(savedCart)) return {};
+
+    return Object.fromEntries(
+      Object.entries(savedCart).filter(([index, quantity]) =>
+        Number.isInteger(Number(index)) && products[Number(index)] && Number.isInteger(quantity) && quantity > 0
+      )
+    );
+  } catch {
+    return {};
+  }
+}
+
+function getCartQuantity() {
+  return Object.values(cartItems).reduce((total, quantity) => total + quantity, 0);
+}
+
+function getCartTotal() {
+  return Object.entries(cartItems).reduce((total, [index, quantity]) =>
+    total + products[Number(index)].price * quantity, 0
+  );
+}
+
+function updateCartDisplay() {
+  const quantity = getCartQuantity();
+  cartCount.textContent = String(quantity);
+  cartButton.setAttribute("aria-label", `Shopping cart, ${quantity} ${quantity === 1 ? "item" : "items"}`);
+}
 
 function renderProducts() {
   const query = searchInput.value.trim().toLowerCase();
@@ -57,7 +89,7 @@ function showToast(message) {
   toast.textContent = message;
   toast.classList.add("visible");
   window.clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => toast.classList.remove("visible"), 2200);
+  toastTimer = window.setTimeout(() => toast.classList.remove("visible"), 3000);
 }
 
 searchForm.addEventListener("submit", (event) => {
@@ -84,17 +116,34 @@ productGrid.addEventListener("click", (event) => {
   const button = event.target.closest("[data-product-index]");
   if (!button) return;
 
-  const product = products[Number(button.dataset.productIndex)];
+  const productIndex = Number(button.dataset.productIndex);
+  const product = products[productIndex];
   if (!product) return;
 
-  cartItems += 1;
-  cartCount.textContent = String(cartItems);
-  cartButton.setAttribute("aria-label", `Shopping cart, ${cartItems} ${cartItems === 1 ? "item" : "items"}`);
+  cartItems[productIndex] = (cartItems[productIndex] || 0) + 1;
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+  } catch {
+    showToast("Added to cart. Your browser could not save the cart between visits.");
+  }
+  updateCartDisplay();
   showToast(`${product.name} added to your cart`);
 });
 
 cartButton.addEventListener("click", () => {
-  showToast(cartItems ? `You have ${cartItems} ${cartItems === 1 ? "item" : "items"} in your cart` : "Your cart is empty");
+  const quantity = getCartQuantity();
+  if (!quantity) {
+    showToast("Your cart is empty");
+    return;
+  }
+
+  const items = Object.entries(cartItems)
+    .map(([index, count]) => `${products[Number(index)].name} × ${count}`)
+    .slice(0, 3);
+  const remainingItems = Object.keys(cartItems).length - items.length;
+  const summary = `${items.join(", ")}${remainingItems > 0 ? `, and ${remainingItems} more` : ""}`;
+  showToast(`${quantity} ${quantity === 1 ? "item" : "items"}: ${summary}. Total ₹${getCartTotal()}`);
 });
 
+updateCartDisplay();
 renderProducts();
