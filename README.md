@@ -1,6 +1,6 @@
 # aadishop
 
-aadishop is a simple, responsive storefront demo for browsing budget-friendly fashion, home, beauty, and kids' products. It is built with plain HTML, CSS, and JavaScript and does not require a build step or backend.
+aadishop is a simple, responsive storefront demo for browsing budget-friendly fashion, home, beauty, and kids' products. It is built with plain HTML, CSS, and JavaScript and does not require a build step.
 
 ## Features
 
@@ -23,4 +23,3 @@ No dependencies or installation are required. Open `index.html` in a browser, or
 ## Notes
 
 This is a front-end demo created by Me: product data is defined in `script.js`, and cart contents are kept in memory, so they reset when the page is refreshed. It does not process real orders or payments.
-#
