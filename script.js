@@ -19,6 +19,7 @@ const cartButton = document.querySelector("#cart-button");
 const toast = document.querySelector("#toast");
 
 const CART_STORAGE_KEY = "aadishop-cart";
+const formatPrice = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
 let selectedCategory = "All";
 let cartItems = loadCart();
 let toastTimer;
@@ -64,6 +65,7 @@ function renderProducts() {
 
   productGrid.innerHTML = filteredProducts.map((product) => {
     const productIndex = products.indexOf(product);
+    const quantityInCart = cartItems[productIndex] || 0;
     return `
       <article class="product-card">
         <div class="product-art" style="background: ${product.color}">
@@ -72,9 +74,11 @@ function renderProducts() {
         </div>
         <div class="product-info">
           <p class="product-name">${product.name}</p>
-          <p class="product-price">₹${product.price}<small>₹${product.originalPrice}</small></p>
+          <p class="product-price">₹${formatPrice.format(product.price)}<small>₹${formatPrice.format(product.originalPrice)}</small></p>
           <p class="product-meta"><span class="rating">★ ${product.rating}</span>${product.reviews} reviews</p>
-          <button class="add-button" type="button" data-product-index="${productIndex}">Add to cart</button>
+          <button class="add-button" type="button" data-product-index="${productIndex}" aria-label="Add ${product.name} to cart${quantityInCart ? `, ${quantityInCart} already in cart` : ""}">
+            Add to cart${quantityInCart ? ` <span class="cart-item-quantity" aria-hidden="true">· ${quantityInCart} in cart</span>` : ""}
+          </button>
         </div>
       </article>
     `;
@@ -127,6 +131,7 @@ productGrid.addEventListener("click", (event) => {
     showToast("Added to cart. Your browser could not save the cart between visits.");
   }
   updateCartDisplay();
+  renderProducts();
   showToast(`${product.name} added to your cart`);
 });
 
@@ -142,7 +147,7 @@ cartButton.addEventListener("click", () => {
     .slice(0, 3);
   const remainingItems = Object.keys(cartItems).length - items.length;
   const summary = `${items.join(", ")}${remainingItems > 0 ? `, and ${remainingItems} more` : ""}`;
-  showToast(`${quantity} ${quantity === 1 ? "item" : "items"}: ${summary}. Total ₹${getCartTotal()}`);
+  showToast(`${quantity} ${quantity === 1 ? "item" : "items"}: ${summary}. Total ₹${formatPrice.format(getCartTotal())}`);
 });
 
 updateCartDisplay();
